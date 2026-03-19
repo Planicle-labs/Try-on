@@ -42,7 +42,7 @@ export async function POST(request: Request) {
           model_image: personImageBase64,
           garment_image: garmentImageBase64,
           category: "auto",
-          mode: "balanced",
+          mode: "quality",
           garment_photo_type: "auto",
           num_samples: 1,
         },
