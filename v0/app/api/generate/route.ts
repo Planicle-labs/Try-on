@@ -5,14 +5,31 @@ const FASHN_STATUS_URL = "https://api.fashn.ai/v1/status";
 const POLL_INTERVAL_MS = 2000;
 const MAX_POLL_ATTEMPTS = 60; // 2 minutes max
 
+// CORS headers — tighten Access-Control-Allow-Origin to your Shopify domain later
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+/** Helper: JSON response with CORS headers baked in */
+function jsonResponse(body: object, status = 200) {
+  return NextResponse.json(body, { status, headers: corsHeaders });
+}
+
+/** Handle CORS preflight */
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: corsHeaders });
+}
+
 export async function POST(request: Request) {
   try {
     const apiKey = process.env.FASHN_API_KEY;
 
     if (!apiKey || apiKey === "your_fashn_api_key_here") {
-      return NextResponse.json(
+      return jsonResponse(
         { error: "FASHN_API_KEY is not configured. Add it to .env.local" },
-        { status: 500 }
+        500
       );
     }
 
@@ -20,9 +37,9 @@ export async function POST(request: Request) {
     const { personImageBase64, garmentImageBase64 } = body;
 
     if (!personImageBase64 || !garmentImageBase64) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: "Both person image and garment image are required." },
-        { status: 400 }
+        400
       );
     }
 
@@ -52,9 +69,9 @@ export async function POST(request: Request) {
     if (!runResponse.ok) {
       const errText = await runResponse.text();
       console.error("[VTON] Fashn.ai /run error:", runResponse.status, errText);
-      return NextResponse.json(
+      return jsonResponse(
         { error: `Fashn.ai API error: ${runResponse.status} — ${errText}` },
-        { status: 502 }
+        502
       );
     }
 
@@ -63,9 +80,9 @@ export async function POST(request: Request) {
 
     if (!predictionId) {
       console.error("[VTON] No prediction ID returned:", runData);
-      return NextResponse.json(
+      return jsonResponse(
         { error: "No prediction ID returned from Fashn.ai" },
-        { status: 502 }
+        502
       );
     }
 
@@ -102,9 +119,9 @@ export async function POST(request: Request) {
         const outputUrl = statusData.output?.[0];
 
         if (!outputUrl) {
-          return NextResponse.json(
+          return jsonResponse(
             { error: "Prediction completed but no output image URL returned." },
-            { status: 502 }
+            502
           );
         }
 
@@ -113,7 +130,7 @@ export async function POST(request: Request) {
         console.log(`[VTON Cost] Credits used: ${creditsUsed ?? "unknown"}`);
         console.log(`[VTON] Output URL: ${outputUrl}`);
 
-        return NextResponse.json({
+        return jsonResponse({
           resultImageUrl: outputUrl,
           creditsUsed: creditsUsed ?? "unknown",
           elapsedSeconds: +(elapsedMs / 1000).toFixed(1),
@@ -124,9 +141,9 @@ export async function POST(request: Request) {
         const errorMsg =
           statusData.error?.message ?? "Unknown error during generation";
         console.error(`[VTON] ❌ Failed: ${errorMsg}`);
-        return NextResponse.json(
+        return jsonResponse(
           { error: `Generation failed: ${errorMsg}` },
-          { status: 502 }
+          502
         );
       }
 
@@ -135,15 +152,15 @@ export async function POST(request: Request) {
 
     // Timeout
     console.error("[VTON] ⏳ Timed out after polling");
-    return NextResponse.json(
+    return jsonResponse(
       { error: "Generation timed out. Try again." },
-      { status: 504 }
+      504
     );
   } catch (err) {
     console.error("[VTON] Unexpected error:", err);
-    return NextResponse.json(
+    return jsonResponse(
       { error: `Internal server error: ${(err as Error).message}` },
-      { status: 500 }
+      500
     );
   }
 }
