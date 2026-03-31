@@ -13,5 +13,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     await db.session.deleteMany({ where: { shop } });
   }
 
+  // Delete the merchant record (Generation records will be cascaded)
+  await db.merchant.deleteMany({ where: { shopDomain: shop } });
+
   return new Response();
 };
