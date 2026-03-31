@@ -9,9 +9,7 @@ generator client {
 // enough when changing adapters.
 // See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 model Session {
@@ -33,3 +31,29 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+model Merchant {
+  id          String       @id @default(cuid())
+  shopDomain  String       @unique
+  accessToken String
+  plan        String       @default("free")   // "free" | "pro"
+  isActive    Boolean      @default(true)      // global try-on toggle
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  generations Generation[]
+}
+
+model Generation {
+  id             String   @id @default(cuid())
+  merchantId     String
+  merchant       Merchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  productId      String?
+  inputImageUrl  String?  // R2 URL of uploaded person photo
+  resultImageUrl String?  // R2 URL of generated try-on result
+  costUSD        Float
+  status         String   // "success" | "failed"
+  createdAt      DateTime @default(now())
+
+  @@index([merchantId, createdAt])
+}
+
