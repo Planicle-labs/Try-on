@@ -2,7 +2,7 @@
 
 client_id = "0b7cedb6cb19a918281a47800c04513d"
 name = "try-on"
-application_url = "https://example.com"
+application_url = "https://localhost"
 embedded = true
 
 [build]
@@ -20,10 +20,6 @@ api_version = "2026-04"
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
 
-  [[webhooks.subscriptions]]
-  topics = [ "orders/create" ]
-  uri = "/webhooks/orders/create"
-
 [webhooks.privacy_compliance]
 customer_deletion_url = "/webhooks/customers/redact"
 customer_data_request_url = "/webhooks/customers/data_request"
@@ -33,7 +29,7 @@ shop_deletion_url = "/webhooks/shop/redact"
 scopes = "write_metaobject_definitions,write_metaobjects,write_products"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ "https://localhost/api/auth" ]
 
 [product.metafields.app.demo_info]
 type = "single_line_text_field"

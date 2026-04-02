@@ -7,7 +7,7 @@ declare global {
 
 const createPrismaClient = () =>
   new PrismaClient({
-    datasourceUrl: process.env.DATABASE_URL,
+    log: ["info"],
   });
 
 if (process.env.NODE_ENV !== "production") {

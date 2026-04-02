@@ -1,0 +1,7 @@
+api_version = "2024-04"
+
+[[extensions]]
+uid = "34ce29de-4bb0-482f-451c-f55fd8a989827e58e627"
+type = "theme"
+name = "try-on-extension"
+handle = "try-on-extension"

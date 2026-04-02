@@ -1,0 +1,319 @@
+/* 
+ * Try-On Widget UI
+ * Mobile-first, glassmorphic premium design
+ */
+
+:root {
+  --tryon-black: #111111;
+  --tryon-white: #ffffff;
+  --tryon-gray: #f4f4f5;
+  --tryon-border: #e4e4e7;
+  --tryon-primary: #000000;
+  --tryon-primary-hover: #333333;
+  --tryon-error: #ef4444;
+  --tryon-overlay: rgba(0, 0, 0, 0.4);
+  --tryon-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --tryon-glass-bg: rgba(255, 255, 255, 0.95);
+  --tryon-radius: 12px;
+  --tryon-transition: all 0.3s ease;
+}
+
+.try-on-widget-container {
+  margin: 1.5rem 0;
+  width: 100%;
+}
+
+.try-on-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border-radius: var(--tryon-radius);
+  border: 1px solid var(--tryon-border);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: var(--tryon-transition);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.try-on-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.try-on-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Modal Overlay */
+.try-on-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--tryon-overlay);
+  backdrop-filter: blur(4px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  visibility: visible;
+  transition: var(--tryon-transition);
+}
+
+.try-on-modal-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.try-on-modal-content {
+  background-color: var(--tryon-glass-bg);
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  border-radius: var(--tryon-radius);
+  box-shadow: var(--tryon-shadow);
+  padding: 24px;
+  position: relative;
+  overflow-y: auto;
+  transform: translateY(0);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.try-on-modal-overlay.hidden .try-on-modal-content {
+  transform: translateY(20px);
+}
+
+.try-on-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--tryon-black);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  padding: 4px;
+}
+
+.try-on-modal-close:hover {
+  opacity: 1;
+}
+
+.try-on-modal-header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.try-on-modal-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.5rem;
+  color: var(--tryon-black);
+  font-family: inherit;
+}
+
+.try-on-modal-header p {
+  margin: 0;
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* Views */
+.try-on-view {
+  display: block;
+}
+
+.try-on-view.hidden {
+  display: none;
+}
+
+/* Dropzone */
+.try-on-dropzone {
+  border: 2px dashed var(--tryon-border);
+  border-radius: var(--tryon-radius);
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--tryon-transition);
+  background-color: var(--tryon-white);
+}
+
+.try-on-dropzone:hover, .try-on-dropzone.dragover {
+  border-color: var(--tryon-primary);
+  background-color: var(--tryon-gray);
+}
+
+.try-on-upload-icon {
+  color: var(--tryon-primary);
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.try-on-dropzone p {
+  margin: 0 0 8px 0;
+  color: var(--tryon-black);
+  font-size: 1rem;
+}
+
+.try-on-help-text {
+  font-size: 0.85rem !important;
+  color: #71717a !important;
+  margin-bottom: 0 !important;
+}
+
+.try-on-error {
+  color: var(--tryon-error) !important;
+  font-size: 0.9rem !important;
+  margin-top: 12px !important;
+  background: #fef2f2;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+/* Loading State */
+.try-on-loader-container {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.try-on-progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--tryon-gray);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.try-on-progress-fill {
+  height: 100%;
+  width: 30%;
+  background-color: var(--tryon-primary);
+  border-radius: 4px;
+  animation: progressPulse 5s infinite;
+}
+
+@keyframes progressPulse {
+  0% { width: 10%; opacity: 0.8; }
+  50% { width: 70%; opacity: 1; }
+  100% { width: 95%; opacity: 0.8; }
+}
+
+.try-on-loader-container h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.25rem;
+}
+
+.try-on-loader-container p {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* Result View */
+.try-on-comparison {
+  position: relative;
+  width: 100%;
+  border-radius: var(--tryon-radius);
+  overflow: hidden;
+  background-color: var(--tryon-gray);
+  min-height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.try-on-result-img {
+  width: 100%;
+  height: auto;
+  max-height: 50vh;
+  object-fit: contain;
+  display: block;
+}
+
+.try-on-result-img.hidden {
+  display: none;
+}
+
+.try-on-toggle-btn {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--tryon-black);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: var(--tryon-transition);
+}
+
+.try-on-toggle-btn:hover {
+  background-color: var(--tryon-white);
+  transform: translateX(-50%) scale(1.05);
+}
+
+.try-on-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.try-on-btn-secondary {
+  flex: 1;
+  padding: 12px;
+  background-color: transparent;
+  border: 1px solid var(--tryon-border);
+  border-radius: var(--tryon-radius);
+  color: var(--tryon-black);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--tryon-transition);
+}
+
+.try-on-btn-secondary:hover {
+  background-color: var(--tryon-gray);
+}
+
+@media (max-width: 600px) {
+  .try-on-modal-content {
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .try-on-dropzone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .try-on-comparison {
+    flex: 1;
+  }
+
+  .try-on-result-img {
+    max-height: 60vh;
+  }
+}

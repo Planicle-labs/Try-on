@@ -1,0 +1,85 @@
+<link rel="stylesheet" href="{{ 'try-on-widget.css' | asset_url }}">
+
+<div class="try-on-widget-container" data-product-id="{{ product.id }}" data-product-image="{{ product.featured_image | image_url: width: 1024 }}">
+  <button type="button" class="try-on-button" id="open-try-on-modal" style="background-color: {{ block.settings.button_color }}; color: {{ block.settings.text_color }};">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="try-on-icon"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    {{ block.settings.button_text }}
+  </button>
+</div>
+
+<div id="try-on-modal" class="try-on-modal-overlay hidden">
+  <div class="try-on-modal-content">
+    <button class="try-on-modal-close" id="close-try-on-modal">&times;</button>
+    
+    <div class="try-on-modal-header">
+      <h2>Virtual Try-On</h2>
+      <p>Upload a full-body photo of yourself to see how this looks on you!</p>
+    </div>
+
+    <!-- Upload View -->
+    <div id="try-on-upload-view" class="try-on-view">
+      <div class="try-on-dropzone" id="try-on-dropzone">
+        <input type="file" id="try-on-file-input" accept="image/jpeg, image/png" hidden>
+        <div class="try-on-upload-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <p><strong>Click to upload</strong> or drag and drop</p>
+        <p class="try-on-help-text">JPG or PNG (Max. 4MB). Make sure lighting is clear.</p>
+        <p id="try-on-error-msg" class="try-on-error hidden"></p>
+      </div>
+    </div>
+
+    <!-- Loading View -->
+    <div id="try-on-loading-view" class="try-on-view hidden">
+      <div class="try-on-loader-container">
+        <div class="try-on-progress-bar">
+          <div class="try-on-progress-fill"></div>
+        </div>
+        <h3>Generating your look...</h3>
+        <p>Our AI is tailoring the outfit. This may take up to 30 seconds.</p>
+      </div>
+    </div>
+
+    <!-- Result View -->
+    <div id="try-on-result-view" class="try-on-view hidden">
+      <div class="try-on-comparison">
+        <img id="try-on-original-image" class="try-on-result-img hidden" alt="Original Photo" width="1024" height="1024">
+        <img id="try-on-generated-image" class="try-on-result-img" alt="Generated Try-On" width="1024" height="1024">
+        <button id="try-on-toggle-btn" class="try-on-toggle-btn">Show Original</button>
+      </div>
+      <div class="try-on-actions">
+        <button id="try-on-retry-btn" class="try-on-btn-secondary">Try Another Photo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ 'try-on-widget.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Virtual Try-On Button",
+  "target": "body",
+  "templates": ["product"],
+  "settings": [
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button Text",
+      "default": "Virtual Try-On"
+    },
+    {
+      "type": "color",
+      "id": "button_color",
+      "label": "Button Background Color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Button Text Color",
+      "default": "#FFFFFF"
+    }
+  ]
+}
+{% endschema %}
