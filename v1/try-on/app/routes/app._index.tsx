@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigation, useSubmit } from "react-router";
 import {
@@ -17,7 +17,6 @@ import {
   FormLayout,
   Select,
   Grid,
-  Icon,
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { db } from "../db.server";
@@ -28,7 +27,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { HeadersFunction } from "react-router";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session, admin } = await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
   const shop = session.shop;
 
   let currentMerchant = await db.query.merchant.findFirst({
@@ -47,44 +46,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     currentMerchant = inserted;
   }
 
-  // Always sync current DB state to AppInstallation metafield on page load
-  // This ensures the storefront widget always reflects the latest DB state
-  try {
-    const appInstRes = await admin.graphql(`
-      query { currentAppInstallation { id } }
-    `);
-    const appInstData = await appInstRes.json();
-    const ownerId = appInstData.data.currentAppInstallation.id;
-
-    await admin.graphql(`#graphql
-      mutation MetafieldsSet($metafields: [MetafieldsSetInput!]!) {
-        metafieldsSet(metafields: $metafields) {
-          metafields { key namespace value }
-          userErrors { field message code }
-        }
-      }
-    `, {
-      variables: {
-        metafields: [
-          {
-            key: "widget_config",
-            namespace: "try_on",
-            ownerId,
-            type: "json",
-            value: JSON.stringify({
-              hue: currentMerchant.widgetBtnColorHue,
-              position: currentMerchant.widgetPosition,
-              isEnabled: currentMerchant.isWidgetEnabled,
-            })
-          }
-        ]
-      }
-    });
-    console.log("Loader: Widget config synced to metafield");
-  } catch (err) {
-    console.error("Loader: Failed to sync metafield", err);
-  }
-
   // Mocked stats for the design prototype
   return { 
     merchant: currentMerchant, 
@@ -97,7 +58,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session, admin } = await authenticate.admin(request);
+  const { session } = await authenticate.admin(request);
   const formData = await request.formData();
   
   const hue = parseInt(formData.get("btnColorHue") as string, 10);
@@ -112,42 +73,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       updatedAt: new Date(),
     })
     .where(eq(merchant.shopDomain, session.shop));
-
-  // Sync settings to AppInstallation metafields — accessible in theme extensions via app.metafields
-  const appInstRes = await admin.graphql(`
-    query { currentAppInstallation { id } }
-  `);
-  const appInstData = await appInstRes.json();
-  const ownerId = appInstData.data.currentAppInstallation.id;
-
-  const mfRes = await admin.graphql(`#graphql
-    mutation MetafieldsSet($metafields: [MetafieldsSetInput!]!) {
-      metafieldsSet(metafields: $metafields) {
-        metafields { key namespace value }
-        userErrors { field message code }
-      }
-    }
-  `, {
-    variables: {
-      metafields: [
-        {
-          key: "widget_config",
-          namespace: "try_on",
-          ownerId,
-          type: "json",
-          value: JSON.stringify({ hue, position, isEnabled })
-        }
-      ]
-    }
-  });
-
-  const mfData = await mfRes.json();
-  console.log("Metafield sync full response:", JSON.stringify(mfData, null, 2));
-  if (mfData.data?.metafieldsSet?.userErrors?.length) {
-    console.error("Metafield sync error:", mfData.data.metafieldsSet.userErrors);
-  } else {
-    console.log("Widget config saved to app metafield:", mfData.data?.metafieldsSet?.metafields);
-  }
 
   return { success: true };
 };
@@ -169,16 +94,24 @@ export default function Index() {
   const [position, setPosition] = useState(merchant.widgetPosition ?? "bottom-right");
   const [isWidgetEnabled, setIsWidgetEnabled] = useState(merchant.isWidgetEnabled ?? false);
 
-  const handleSaveSettings = useCallback(() => {
+  const persistSettings = useCallback((enabledOverride?: boolean) => {
     const formData = new FormData();
     formData.append("btnColorHue", btnColor.hue.toString());
     formData.append("position", position);
-    formData.append("isEnabled", isWidgetEnabled.toString());
+    formData.append("isEnabled", (enabledOverride ?? isWidgetEnabled).toString());
     submit(formData, { method: "post" });
     shopify.toast.show("Settings saved successfully");
-  }, [btnColor, position, isWidgetEnabled, submit, shopify]);
+  }, [btnColor.hue, position, isWidgetEnabled, submit, shopify]);
 
-  const toggleWidget = useCallback(() => setIsWidgetEnabled((v) => !v), []);
+  const handleSaveSettings = useCallback(() => {
+    persistSettings();
+  }, [persistSettings]);
+
+  const toggleWidget = useCallback(() => {
+    const nextValue = !isWidgetEnabled;
+    setIsWidgetEnabled(nextValue);
+    persistSettings(nextValue);
+  }, [isWidgetEnabled, persistSettings]);
 
   const progressPercentage = (stats.usedGenerations / stats.totalGenerations) * 100;
 

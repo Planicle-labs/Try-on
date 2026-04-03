@@ -11,36 +11,57 @@ document.addEventListener('DOMContentLoaded', () => {
     if (wrapper) {
       const urlParams = new URLSearchParams(window.location.search);
       const isPreview = urlParams.get('try_on_preview') === '1';
-      const isEnabled = wrapper.dataset.enabled === 'true';
+      const isDesignMode = wrapper.dataset.designMode === 'true';
+      const configUrl = wrapper.dataset.configUrl;
       
       console.log('[Try-On Widget] Config:', {
-        enabled: wrapper.dataset.enabled,
-        hue: wrapper.dataset.hue,
-        position: wrapper.dataset.position,
+        configUrl,
+        isDesignMode,
         isPreview
       });
 
-      // Show widget if enabled OR in preview mode
-      if (isEnabled || isPreview) {
-        wrapper.style.display = 'block';
-      } else {
-        wrapper.style.display = 'none';
-        return; // Don't set up anything else if widget is disabled and not previewing
-      }
+      const applyWidgetConfig = (config = {}) => {
+        const isEnabled = Boolean(config.isEnabled);
+        const position = config.position || 'bottom-right';
+        const hue = Number.parseInt(String(config.hue ?? 120), 10);
 
-      // Apply position class dynamically from data attribute
-      const position = wrapper.dataset.position || 'bottom-right';
-      if (container) {
-        // Remove any existing position classes and re-apply
-        container.classList.remove('tryon-pos-bottom-right', 'tryon-pos-bottom-left', 'tryon-pos-middle-left');
-        container.classList.add(`tryon-pos-${position}`);
-
-        // Apply color from data attribute
-        const hue = parseInt(wrapper.dataset.hue || '120', 10);
-        const btn = container.querySelector('.try-on-button');
-        if (btn) {
-          btn.style.backgroundColor = `hsl(${hue}, 100%, 40%)`;
+        if (!isEnabled && !isPreview && !isDesignMode) {
+          wrapper.style.display = 'none';
+          return;
         }
+
+        wrapper.style.display = 'block';
+
+        if (container) {
+          container.classList.remove('tryon-pos-bottom-right', 'tryon-pos-bottom-left', 'tryon-pos-middle-left');
+          container.classList.add(`tryon-pos-${position}`);
+
+          const btn = container.querySelector('.try-on-button');
+          if (btn) {
+            btn.style.backgroundColor = `hsl(${Number.isFinite(hue) ? hue : 120}, 100%, 40%)`;
+          }
+        }
+      };
+
+      const fallbackConfig = {
+        isEnabled: false,
+        hue: 120,
+        position: 'bottom-right',
+      };
+
+      if (!configUrl) {
+        applyWidgetConfig(fallbackConfig);
+      } else {
+        fetch(configUrl, { cache: 'no-store' })
+          .then(async (response) => {
+            if (!response.ok) throw new Error(`Config request failed: ${response.status}`);
+            return response.json();
+          })
+          .then((config) => applyWidgetConfig({ ...fallbackConfig, ...config }))
+          .catch((error) => {
+            console.warn('[Try-On Widget] Failed to load proxy config, using fallback', error);
+            applyWidgetConfig(fallbackConfig);
+          });
       }
     }
 
