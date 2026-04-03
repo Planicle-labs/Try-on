@@ -6,8 +6,44 @@ import { merchant } from "../db/schema";
 
 const defaultConfig = {
   hue: 120,
+  saturation: 1,
+  brightness: 1,
   position: "bottom-right",
   isEnabled: false,
+  buttonText: "Try It On",
+  buttonEmoji: "👀",
+  buttonImageUrl: "",
+  buttonIcon: "none",
+  buttonIconPosition: "none",
+  buttonSize: 56,
+  buttonContentType: "text",
+  buttonRadius: 12,
+  buttonTextColor: "#FFFFFF",
+};
+
+const normalizeContentType = (value: string | null | undefined) => {
+  if (value === "text" || value === "emoji" || value === "image") {
+    return value;
+  }
+
+  return "text";
+};
+
+const normalizeIcon = (value: string | null | undefined) => {
+  const trimmed = (value || "").trim();
+  return trimmed || "none";
+};
+
+const normalizeIconPosition = (icon: string, value: string | null | undefined) => {
+  if (icon === "none") {
+    return "none";
+  }
+
+  if (value === "before" || value === "after") {
+    return value;
+  }
+
+  return "after";
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -32,9 +68,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return Response.json(
     currentMerchant
       ? {
-          hue: currentMerchant.widgetBtnColorHue,
-          position: currentMerchant.widgetPosition,
-          isEnabled: currentMerchant.isWidgetEnabled,
+          ...defaultConfig,
+          hue: currentMerchant.widgetBtnColorHue ?? defaultConfig.hue,
+          saturation: currentMerchant.widgetBtnColorSaturation ?? defaultConfig.saturation,
+          brightness: currentMerchant.widgetBtnColorBrightness ?? defaultConfig.brightness,
+          position: currentMerchant.widgetPosition || defaultConfig.position,
+          isEnabled: currentMerchant.isWidgetEnabled ?? defaultConfig.isEnabled,
+          buttonText: currentMerchant.widgetButtonText || defaultConfig.buttonText,
+          buttonEmoji: currentMerchant.widgetButtonEmoji || defaultConfig.buttonEmoji,
+          buttonImageUrl: currentMerchant.widgetButtonImageUrl || defaultConfig.buttonImageUrl,
+          buttonIcon: normalizeIcon(currentMerchant.widgetButtonIcon),
+          buttonIconPosition: normalizeIconPosition(
+            normalizeIcon(currentMerchant.widgetButtonIcon),
+            currentMerchant.widgetButtonIconPosition
+          ),
+          buttonSize: currentMerchant.widgetButtonSize ?? defaultConfig.buttonSize,
+          buttonContentType: normalizeContentType(currentMerchant.widgetButtonContentType),
+          buttonRadius: currentMerchant.widgetButtonRadius ?? defaultConfig.buttonRadius,
+          buttonTextColor: currentMerchant.widgetButtonTextColor || defaultConfig.buttonTextColor,
         }
       : defaultConfig,
     {

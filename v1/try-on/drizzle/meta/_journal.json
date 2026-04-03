@@ -8,6 +8,13 @@
       "when": 1775212944037,
       "tag": "0000_naive_roland_deschain",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775251200000,
+      "tag": "0001_button_customization_upgrade",
+      "breakpoints": true
     }
   ]
 }

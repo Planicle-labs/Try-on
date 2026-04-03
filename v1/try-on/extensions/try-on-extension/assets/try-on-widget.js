@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Select elements
     const wrapper = document.getElementById('try-on-widget-wrapper');
     const container = document.querySelector('.try-on-widget-container');
+    const button = container?.querySelector('.try-on-button');
     
     if (wrapper) {
       const urlParams = new URLSearchParams(window.location.search);
@@ -20,10 +21,124 @@ document.addEventListener('DOMContentLoaded', () => {
         isPreview
       });
 
+      const toCssColor = ({ hue = 120, saturation = 1, brightness = 1 } = {}) => {
+        const h = (((hue % 360) + 360) % 360) / 60;
+        const s = Math.max(0, Math.min(1, saturation));
+        const v = Math.max(0, Math.min(1, brightness));
+        const c = v * s;
+        const x = c * (1 - Math.abs((h % 2) - 1));
+        const m = v - c;
+
+        let red = 0;
+        let green = 0;
+        let blue = 0;
+
+        if (h < 1) {
+          red = c; green = x;
+        } else if (h < 2) {
+          red = x; green = c;
+        } else if (h < 3) {
+          green = c; blue = x;
+        } else if (h < 4) {
+          green = x; blue = c;
+        } else if (h < 5) {
+          red = x; blue = c;
+        } else {
+          red = c; blue = x;
+        }
+
+        const channel = (value) => Math.round((value + m) * 255).toString(16).padStart(2, '0');
+        return `#${channel(red)}${channel(green)}${channel(blue)}`;
+      };
+
+      const normalizeContentType = (value) => {
+        if (value === 'image' || value === 'emoji' || value === 'text') {
+          return value;
+        }
+
+        return 'text';
+      };
+
+      const normalizeIcon = (value) => {
+        const trimmed = String(value || '').trim();
+        return trimmed || 'none';
+      };
+
+      const normalizeIconPosition = (value) => {
+        if (value === 'before' || value === 'after' || value === 'none') {
+          return value;
+        }
+
+        return 'none';
+      };
+
+      const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+      const getButtonMetrics = (size, radius, iconOnly) => {
+        const normalizedSize = clamp(size, 0, 100);
+        const scale = normalizedSize / 100;
+        const fontSize = Math.round(14 + scale * 8);
+        const paddingY = Math.round(10 + scale * 6);
+        const paddingX = Math.round(14 + scale * 14);
+        const iconOnlySize = Math.round(34 + scale * 28);
+        const height = iconOnly ? iconOnlySize : Math.max(fontSize + paddingY * 2, 40);
+        const borderRadius = Math.round((height / 2) * (clamp(radius, 0, 100) / 100));
+
+        return {
+          fontSize,
+          paddingY,
+          paddingX,
+          iconOnlySize,
+          height,
+          borderRadius,
+        };
+      };
+
+      const resolveButtonRenderMode = (buttonContentType, buttonRadius, buttonSize, buttonIcon) => {
+        const iconOnly = buttonContentType !== 'text';
+        const effectiveContentType = buttonContentType;
+        const metrics = getButtonMetrics(buttonSize, buttonRadius, iconOnly);
+        return {
+          iconOnly,
+          effectiveContentType,
+          metrics,
+          buttonIcon,
+        };
+      };
+
       const applyWidgetConfig = (config = {}) => {
         const isEnabled = Boolean(config.isEnabled);
         const position = config.position || 'bottom-right';
         const hue = Number.parseInt(String(config.hue ?? 120), 10);
+        const saturation = Number.parseFloat(String(config.saturation ?? 1));
+        const brightness = Number.parseFloat(String(config.brightness ?? 1));
+        const buttonContentType = normalizeContentType(config.buttonContentType);
+        const buttonText = config.buttonText || 'Try It On';
+        const buttonEmoji = config.buttonEmoji || '👀';
+        const buttonImageUrl = config.buttonImageUrl || '';
+        const buttonIcon = normalizeIcon(config.buttonIcon);
+        const buttonIconPosition = buttonIcon === 'none'
+          ? 'none'
+          : normalizeIconPosition(config.buttonIconPosition) === 'none'
+            ? 'after'
+            : normalizeIconPosition(config.buttonIconPosition);
+        const buttonSize = clamp(
+          Number.isFinite(Number(config.buttonSize)) ? Number(config.buttonSize) : 56,
+          0,
+          100
+        );
+        const buttonRadius = clamp(
+          Number.isFinite(Number(config.buttonRadius)) ? Number(config.buttonRadius) : 12,
+          0,
+          100
+        );
+        const buttonTextColor = config.buttonTextColor || '#FFFFFF';
+        const { iconOnly, effectiveContentType, metrics } = resolveButtonRenderMode(
+          buttonContentType,
+          buttonRadius,
+          buttonSize,
+          buttonIcon
+        );
 
         if (!isEnabled && !isPreview && !isDesignMode) {
           wrapper.style.display = 'none';
@@ -35,10 +150,64 @@ document.addEventListener('DOMContentLoaded', () => {
         if (container) {
           container.classList.remove('tryon-pos-bottom-right', 'tryon-pos-bottom-left', 'tryon-pos-middle-left');
           container.classList.add(`tryon-pos-${position}`);
+          if (button) {
+            button.style.backgroundColor = toCssColor({
+              hue: Number.isFinite(hue) ? hue : 120,
+              saturation: Number.isFinite(saturation) ? saturation : 1,
+              brightness: Number.isFinite(brightness) ? brightness : 1,
+            });
+            button.style.color = buttonContentType === 'text' ? buttonTextColor : 'inherit';
+            button.style.borderRadius = `${metrics.borderRadius}px`;
+            button.style.padding = iconOnly ? '0' : `${metrics.paddingY}px ${metrics.paddingX}px`;
+            button.style.minWidth = iconOnly ? `${metrics.iconOnlySize}px` : 'fit-content';
+            button.style.width = iconOnly ? `${metrics.iconOnlySize}px` : 'auto';
+            button.style.height = iconOnly ? `${metrics.iconOnlySize}px` : 'auto';
+            button.style.overflow = 'hidden';
+            button.style.fontSize = `${metrics.fontSize}px`;
+            button.style.lineHeight = '1';
+            button.innerHTML = '';
 
-          const btn = container.querySelector('.try-on-button');
-          if (btn) {
-            btn.style.backgroundColor = `hsl(${Number.isFinite(hue) ? hue : 120}, 100%, 40%)`;
+            if (effectiveContentType === 'image' && buttonImageUrl) {
+              const img = document.createElement('img');
+              img.src = buttonImageUrl;
+              img.alt = buttonText || 'Button icon';
+              img.width = 22;
+              img.height = 22;
+              img.style.width = '22px';
+              img.style.height = '22px';
+              img.style.objectFit = 'cover';
+              img.style.borderRadius = '9999px';
+              button.appendChild(img);
+            } else if (effectiveContentType === 'image') {
+              const icon = document.createElement('span');
+              icon.className = 'try-on-button-content';
+              icon.textContent = buttonEmoji || '👀';
+              button.appendChild(icon);
+            } else {
+              const content = document.createElement('span');
+              content.className = 'try-on-button-content';
+              content.style.display = 'inline-flex';
+              content.style.alignItems = 'center';
+              content.style.gap = buttonContentType === 'text' && buttonIcon !== 'none' && buttonIconPosition !== 'none' ? '6px' : '0';
+
+              if (buttonContentType === 'text' && buttonIcon !== 'none' && buttonIconPosition === 'before') {
+                const icon = document.createElement('span');
+                icon.textContent = buttonIcon;
+                content.appendChild(icon);
+              }
+
+              const label = document.createElement('span');
+              label.textContent = buttonText;
+              content.appendChild(label);
+
+              if (buttonContentType === 'text' && buttonIcon !== 'none' && buttonIconPosition === 'after') {
+                const icon = document.createElement('span');
+                icon.textContent = buttonIcon;
+                content.appendChild(icon);
+              }
+
+              button.appendChild(content);
+            }
           }
         }
       };
@@ -46,7 +215,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const fallbackConfig = {
         isEnabled: false,
         hue: 120,
+        saturation: 1,
+        brightness: 1,
         position: 'bottom-right',
+        buttonText: 'Try It On',
+        buttonEmoji: '👀',
+        buttonImageUrl: '',
+        buttonIcon: '',
+        buttonIconPosition: 'none',
+        buttonSize: 56,
+        buttonContentType: 'text',
+        buttonRadius: 12,
+        buttonTextColor: '#FFFFFF',
       };
 
       if (!configUrl) {
