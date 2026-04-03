@@ -12,17 +12,25 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return { apiKey: process.env.SHOPIFY_API_KEY || "" };
 };
 
+import { AppProvider as PolarisAppProvider } from "@shopify/polaris";
+import enTranslations from "@shopify/polaris/locales/en.json";
+import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
+
+export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
+
 export default function App() {
   const { apiKey } = useLoaderData<typeof loader>();
 
   return (
-    <AppProvider embedded apiKey={apiKey}>
-      <s-app-nav>
-        <s-link href="/app">Home</s-link>
-        <s-link href="/app/additional">Additional page</s-link>
-      </s-app-nav>
-      <Outlet />
-    </AppProvider>
+    <PolarisAppProvider i18n={enTranslations}>
+      <AppProvider embedded apiKey={apiKey}>
+        <s-app-nav>
+          <s-link href="/app">Home</s-link>
+          <s-link href="/app/additional">Additional page</s-link>
+        </s-app-nav>
+        <Outlet />
+      </AppProvider>
+    </PolarisAppProvider>
   );
 }
 
