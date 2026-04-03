@@ -29,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const retryBtn = document.getElementById('try-on-retry-btn');
     
     // Product data (passed from Liquid)
-    const productId = container.dataset.productId;
     const productImage = container.dataset.productImage;
   
     // Context State

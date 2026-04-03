@@ -308,8 +308,8 @@ export default function Index() {
         </s-paragraph>
         <s-paragraph>
           <s-text>Database: </s-text>
-          <s-link href="https://www.prisma.io/" target="_blank">
-            Prisma
+          <s-link href="https://orm.drizzle.team/" target="_blank">
+            Drizzle
           </s-link>
         </s-paragraph>
       </s-section>
