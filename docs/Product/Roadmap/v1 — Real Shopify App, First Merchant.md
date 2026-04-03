@@ -46,8 +46,7 @@ This is where you build real Shopify infrastructure. No more script injection. N
 ### First merchant target
 
 Before v1 is finished, identify your first real beta merchant. The profile you want:
-- A small Indian D2C clothing brand on Shopify
-- Selling fitted clothing (kurtas, western wear, co-ords — not accessories or shoes)
+- Any vendor in the fashion category on Shopify (not shoes or accessories)
 - Doing at least ₹5L/month in GMV (so they care about returns but won’t make enterprise demands)
 - Someone you can reach directly — a friend’s business, a LinkedIn connection, a founder community contact
 - Someone who will give you honest feedback, not just be polite because they know you

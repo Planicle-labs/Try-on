@@ -41,7 +41,7 @@ The $249/mo price point lives or dies on the ROI dashboard. A merchant will not 
 
 **Merchant Studio (Pro only):**
 - Let merchants take any product + stock model combination and export a marketing-ready image
-- Stock models: a set of pre-generated diverse body type models stored in your S3/R2
+- Stock models: a set of pre-generated diverse body type models stored in Cloudflare R2
 - Merchant selects product + model → VTON generation → download PNG at full resolution
 - Add a subtle watermark in the free/starter plan, remove in Pro
 
