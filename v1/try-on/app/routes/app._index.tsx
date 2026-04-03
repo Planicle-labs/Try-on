@@ -28,7 +28,7 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { HeadersFunction } from "react-router";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const shop = session.shop;
 
   let currentMerchant = await db.query.merchant.findFirst({
@@ -47,6 +47,44 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     currentMerchant = inserted;
   }
 
+  // Always sync current DB state to AppInstallation metafield on page load
+  // This ensures the storefront widget always reflects the latest DB state
+  try {
+    const appInstRes = await admin.graphql(`
+      query { currentAppInstallation { id } }
+    `);
+    const appInstData = await appInstRes.json();
+    const ownerId = appInstData.data.currentAppInstallation.id;
+
+    await admin.graphql(`#graphql
+      mutation MetafieldsSet($metafields: [MetafieldsSetInput!]!) {
+        metafieldsSet(metafields: $metafields) {
+          metafields { key namespace value }
+          userErrors { field message code }
+        }
+      }
+    `, {
+      variables: {
+        metafields: [
+          {
+            key: "widget_config",
+            namespace: "try_on",
+            ownerId,
+            type: "json",
+            value: JSON.stringify({
+              hue: currentMerchant.widgetBtnColorHue,
+              position: currentMerchant.widgetPosition,
+              isEnabled: currentMerchant.isWidgetEnabled,
+            })
+          }
+        ]
+      }
+    });
+    console.log("Loader: Widget config synced to metafield");
+  } catch (err) {
+    console.error("Loader: Failed to sync metafield", err);
+  }
+
   // Mocked stats for the design prototype
   return { 
     merchant: currentMerchant, 
@@ -59,11 +97,58 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  // Action to save widget configuration settings (mocked for now)
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const formData = await request.formData();
   
-  // Here we would extract the settings and save them to the DB.
+  const hue = parseInt(formData.get("btnColorHue") as string, 10);
+  const position = formData.get("position") as string;
+  const isEnabled = formData.get("isEnabled") === "true";
+
+  await db.update(merchant)
+    .set({
+      widgetBtnColorHue: hue,
+      widgetPosition: position,
+      isWidgetEnabled: isEnabled,
+      updatedAt: new Date(),
+    })
+    .where(eq(merchant.shopDomain, session.shop));
+
+  // Sync settings to AppInstallation metafields — accessible in theme extensions via app.metafields
+  const appInstRes = await admin.graphql(`
+    query { currentAppInstallation { id } }
+  `);
+  const appInstData = await appInstRes.json();
+  const ownerId = appInstData.data.currentAppInstallation.id;
+
+  const mfRes = await admin.graphql(`#graphql
+    mutation MetafieldsSet($metafields: [MetafieldsSetInput!]!) {
+      metafieldsSet(metafields: $metafields) {
+        metafields { key namespace value }
+        userErrors { field message code }
+      }
+    }
+  `, {
+    variables: {
+      metafields: [
+        {
+          key: "widget_config",
+          namespace: "try_on",
+          ownerId,
+          type: "json",
+          value: JSON.stringify({ hue, position, isEnabled })
+        }
+      ]
+    }
+  });
+
+  const mfData = await mfRes.json();
+  console.log("Metafield sync full response:", JSON.stringify(mfData, null, 2));
+  if (mfData.data?.metafieldsSet?.userErrors?.length) {
+    console.error("Metafield sync error:", mfData.data.metafieldsSet.userErrors);
+  } else {
+    console.log("Widget config saved to app metafield:", mfData.data?.metafieldsSet?.metafields);
+  }
+
   return { success: true };
 };
 
@@ -77,12 +162,12 @@ export default function Index() {
 
   // Widget settings state
   const [btnColor, setBtnColor] = useState({
-    hue: 120,
+    hue: merchant.widgetBtnColorHue ?? 120,
     brightness: 1,
     saturation: 1,
   });
-  const [position, setPosition] = useState("bottom-right");
-  const [isWidgetEnabled, setIsWidgetEnabled] = useState(merchant.isActive);
+  const [position, setPosition] = useState(merchant.widgetPosition ?? "bottom-right");
+  const [isWidgetEnabled, setIsWidgetEnabled] = useState(merchant.isWidgetEnabled ?? false);
 
   const handleSaveSettings = useCallback(() => {
     const formData = new FormData();
@@ -96,6 +181,9 @@ export default function Index() {
   const toggleWidget = useCallback(() => setIsWidgetEnabled((v) => !v), []);
 
   const progressPercentage = (stats.usedGenerations / stats.totalGenerations) * 100;
+
+  // Deriving HSL string for the preview button
+  const previewColor = `hsl(${btnColor.hue}, 100%, 40%)`;
 
   return (
     <Page>
@@ -122,9 +210,17 @@ export default function Index() {
                       Your virtual try-on widget is ready to boost your conversions. Customize the appearance below or check your latest generation stats.
                     </Text>
                     <Box paddingBlockStart="200">
-                      <Button variant="primary" onClick={toggleWidget}>
-                        {isWidgetEnabled ? "Disable Widget" : "Enable Widget"}
-                      </Button>
+                      <InlineStack gap="300">
+                        <Button variant="primary" onClick={toggleWidget}>
+                          {isWidgetEnabled ? "Disable Widget" : "Enable Widget"}
+                        </Button>
+                        <Button
+                          url={`https://${merchant.shopDomain}?try_on_preview=1`}
+                          target="_blank"
+                        >
+                          Test on Storefront
+                        </Button>
+                      </InlineStack>
                     </Box>
                   </BlockStack>
                 </Box>
@@ -188,39 +284,66 @@ export default function Index() {
 
           {/* Settings Section */}
           <Layout.Section variant="oneThird">
-            <Card roundedAbove="sm">
-              <BlockStack gap="400">
-                <Text variant="headingMd" as="h3">
-                  Widget Customization
-                </Text>
-                <FormLayout>
-                  <Select
-                    label="Widget Position"
-                    options={[
-                      { label: "Bottom Right", value: "bottom-right" },
-                      { label: "Bottom Left", value: "bottom-left" },
-                      { label: "Middle Left", value: "middle-left" },
-                    ]}
-                    onChange={setPosition}
-                    value={position}
-                  />
-                  <Box>
-                    <Text as="p" variant="bodyMd">Primary Button Color</Text>
-                    <Box paddingBlockStart="200">
-                      <ColorPicker onChange={setBtnColor} color={btnColor} />
+            <BlockStack gap="400">
+              <Card roundedAbove="sm">
+                <BlockStack gap="400">
+                  <Text variant="headingMd" as="h3">
+                    Widget Customization
+                  </Text>
+                  <FormLayout>
+                    <Select
+                      label="Widget Position"
+                      options={[
+                        { label: "Bottom Right", value: "bottom-right" },
+                        { label: "Bottom Left", value: "bottom-left" },
+                        { label: "Middle Left", value: "middle-left" },
+                      ]}
+                      onChange={setPosition}
+                      value={position}
+                    />
+                    <Box>
+                      <Text as="p" variant="bodyMd">Primary Button Color</Text>
+                      <Box paddingBlockStart="200">
+                        <ColorPicker onChange={setBtnColor} color={btnColor} />
+                      </Box>
                     </Box>
+                  </FormLayout>
+                  <Divider />
+                  
+                  {/* Button Live Preview */}
+                  <Box padding="200" background="bg-surface-secondary" borderRadius="100">
+                    <BlockStack gap="200" inlineAlign="center">
+                      <Text variant="headingSm" as="h4">Button Preview</Text>
+                      <div
+                        style={{
+                          backgroundColor: previewColor,
+                          color: "#fff",
+                          padding: "10px 16px",
+                          borderRadius: "8px",
+                          fontWeight: "bold",
+                          display: "inline-block",
+                          border: "1px solid rgba(0,0,0,0.1)",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+                        }}
+                      >
+                        Try It On 👀
+                      </div>
+                      <Text variant="bodySm" as="p" tone="subdued">
+                        Position: {position.replace("-", " ")}
+                      </Text>
+                    </BlockStack>
                   </Box>
-                </FormLayout>
-                <Divider />
-                <Button 
-                  onClick={handleSaveSettings} 
-                  variant="primary" 
-                  loading={isSaving}
-                >
-                  Save settings
-                </Button>
-              </BlockStack>
-            </Card>
+
+                  <Button 
+                    onClick={handleSaveSettings} 
+                    variant="primary" 
+                    loading={isSaving}
+                  >
+                    Save settings
+                  </Button>
+                </BlockStack>
+              </Card>
+            </BlockStack>
           </Layout.Section>
         </Layout>
       </BlockStack>

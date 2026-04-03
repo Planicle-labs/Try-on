@@ -1,15 +1,34 @@
+{% liquid
+  assign config = app.metafields.try_on.widget_config.value
+  assign is_enabled = false
+  assign widget_hue = 120
+  assign widget_position = 'bottom-right'
+
+  if config != blank
+    assign is_enabled = config.isEnabled
+    assign widget_hue = config.hue
+    assign widget_position = config.position
+  endif
+%}
+
 <link rel="stylesheet" href="{{ 'try-on-widget.css' | asset_url }}">
 
-<div class="try-on-widget-container" data-product-id="{{ product.id }}" data-product-image="{{ product.featured_image | image_url: width: 1024 }}">
-  <button type="button" class="try-on-button" id="open-try-on-modal" style="background-color: {{ block.settings.button_color }}; color: {{ block.settings.text_color }};">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="try-on-icon"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-    {{ block.settings.button_text }}
-  </button>
-</div>
+<div id="try-on-widget-wrapper"
+  data-enabled="{{ is_enabled }}"
+  data-hue="{{ widget_hue }}"
+  data-position="{{ widget_position }}"
+  {% unless is_enabled or request.design_mode %}style="display:none;"{% endunless %}
+>
+  <div class="try-on-widget-container tryon-pos-{{ widget_position }}" data-product-id="{{ product.id }}" data-product-image="{{ product.featured_image | image_url: width: 1024 }}">
+    <button type="button" class="try-on-button" id="open-try-on-modal" style="background-color: hsl({{ widget_hue }}, 100%, 40%); color: {{ block.settings.text_color | default: '#fff' }};">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="try-on-icon"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      {{ block.settings.button_text | default: 'Virtual Try-On' }}
+    </button>
+  </div>
 
-<div id="try-on-modal" class="try-on-modal-overlay hidden">
-  <div class="try-on-modal-content">
-    <button class="try-on-modal-close" id="close-try-on-modal">&times;</button>
+  <div id="try-on-modal" class="try-on-modal-overlay hidden">
+    <div class="try-on-modal-content">
+      <button class="try-on-modal-close" id="close-try-on-modal">&times;</button>
     
     <div class="try-on-modal-header">
       <h2>Virtual Try-On</h2>
@@ -52,6 +71,7 @@
       </div>
     </div>
   </div>
+</div>
 </div>
 
 <script src="{{ 'try-on-widget.js' | asset_url }}" defer></script>

@@ -5,7 +5,45 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Select elements
+    const wrapper = document.getElementById('try-on-widget-wrapper');
     const container = document.querySelector('.try-on-widget-container');
+    
+    if (wrapper) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isPreview = urlParams.get('try_on_preview') === '1';
+      const isEnabled = wrapper.dataset.enabled === 'true';
+      
+      console.log('[Try-On Widget] Config:', {
+        enabled: wrapper.dataset.enabled,
+        hue: wrapper.dataset.hue,
+        position: wrapper.dataset.position,
+        isPreview
+      });
+
+      // Show widget if enabled OR in preview mode
+      if (isEnabled || isPreview) {
+        wrapper.style.display = 'block';
+      } else {
+        wrapper.style.display = 'none';
+        return; // Don't set up anything else if widget is disabled and not previewing
+      }
+
+      // Apply position class dynamically from data attribute
+      const position = wrapper.dataset.position || 'bottom-right';
+      if (container) {
+        // Remove any existing position classes and re-apply
+        container.classList.remove('tryon-pos-bottom-right', 'tryon-pos-bottom-left', 'tryon-pos-middle-left');
+        container.classList.add(`tryon-pos-${position}`);
+
+        // Apply color from data attribute
+        const hue = parseInt(wrapper.dataset.hue || '120', 10);
+        const btn = container.querySelector('.try-on-button');
+        if (btn) {
+          btn.style.backgroundColor = `hsl(${hue}, 100%, 40%)`;
+        }
+      }
+    }
+
     if (!container) return; // Not on a product page or block not included
   
     const openBtn = document.getElementById('open-try-on-modal');

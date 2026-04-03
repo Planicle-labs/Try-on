@@ -19,8 +19,42 @@
 }
 
 .try-on-widget-container {
+  /* Default inline positioning (if positioned manually in theme block) */
   margin: 1.5rem 0;
   width: 100%;
+}
+
+.try-on-widget-container.tryon-pos-bottom-right,
+.try-on-widget-container.tryon-pos-bottom-left,
+.try-on-widget-container.tryon-pos-middle-left {
+  position: fixed;
+  z-index: 9000;
+  width: auto;
+  margin: 0;
+}
+
+.try-on-widget-container.tryon-pos-bottom-right {
+  bottom: 20px;
+  right: 20px;
+}
+
+.try-on-widget-container.tryon-pos-bottom-left {
+  bottom: 20px;
+  left: 20px;
+}
+
+.try-on-widget-container.tryon-pos-middle-left {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  /* rotate text vertically */
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.try-on-widget-container.tryon-pos-middle-left .try-on-button {
+  padding: 20px 14px;
+  border-radius: 0 12px 12px 0;
 }
 
 .try-on-button {

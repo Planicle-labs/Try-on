@@ -4,6 +4,7 @@
   "scripts": {
     "build": "react-router build",
     "dev": "shopify app dev",
+    "dev:clean": "powershell -Command \"$p = (netstat -ano | Select-String ':9293' | Where-Object { $_ -match 'LISTENING' } | ForEach-Object { ($_ -split '\\s+')[-1] } | Select-Object -First 1); if ($p) { taskkill /F /PID $p }\" ; shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
     "deploy": "shopify app deploy",

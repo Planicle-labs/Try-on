@@ -7,7 +7,6 @@ embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
-include_config_on_deploy = true
 
 [webhooks]
 api_version = "2026-04"
@@ -38,6 +37,8 @@ description = "Tracks products created by the Shopify app template for developme
 
   [product.metafields.app.demo_info.access]
   admin = "merchant_read_write"
+
+
 
 [metaobjects.app.example]
 name = "Example"
