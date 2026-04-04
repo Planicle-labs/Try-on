@@ -41,6 +41,7 @@ export const merchant = pgTable("Merchant", {
   widgetBtnColorSaturation: doublePrecision("widgetBtnColorSaturation").default(1).notNull(),
   widgetBtnColorBrightness: doublePrecision("widgetBtnColorBrightness").default(1).notNull(),
   isWidgetEnabled: boolean("isWidgetEnabled").default(false).notNull(),
+  hasCustomizedWidget: boolean("hasCustomizedWidget").default(false).notNull(),
   widgetButtonText: text("widgetButtonText").default("Try It On").notNull(),
   widgetButtonContentType: text("widgetButtonContentType").default("text").notNull(),
   widgetButtonEmoji: text("widgetButtonEmoji").default("👀").notNull(),
