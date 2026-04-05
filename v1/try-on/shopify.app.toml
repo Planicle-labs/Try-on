@@ -28,9 +28,9 @@ shop_deletion_url = "/webhooks/shop/redact"
 scopes = "write_app_proxy,write_metaobject_definitions,write_metaobjects,write_products"
 
 [app_proxy]
-url = "/proxy/widget-config"
+url = "/proxy"
 prefix = "apps"
-subpath = "try-on-widget"
+subpath = "try-on"
 
 [auth]
 redirect_urls = [ "https://localhost/api/auth" ]

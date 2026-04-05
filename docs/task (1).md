@@ -2,15 +2,15 @@
 
 ## Phase 1: Shopify App Scaffold & Auth
 - [x] Scaffold app with `npm init @shopify/app@latest` in `v1/try-on/`
-- [x] Switch Prisma datasource from SQLite to NeonDB PostgreSQL
-- [x] Configure `.env` with NeonDB `DATABASE_URL` + `DIRECT_URL`
-- [x] Run `npx prisma migrate dev --name init`
+- [x] Use Drizzle ORM with NeonDB PostgreSQL instead of Prisma
+- [x] Configure `.env` with NeonDB `DATABASE_URL`
+- [x] Run `npm run db:push` to sync initial schema
 - [x] Verify OAuth flow with dev store (install → grant → redirect)
 
-## Phase 2: Database Schema
-- [x] Add `Merchant` model (shopDomain, accessToken, plan, isActive, trialEndsAt)
-- [x] Add `Generation` model (merchantId, productId, inputImageUrl, resultImageUrl, costUSD, status)
-- [x] Run `npx prisma migrate dev --name add_merchant_generation`
+## Phase 2: Database Schema (Drizzle)
+- [x] Define `Merchant` schema (shopDomain, accessToken, plan, isActive, widget customization, trialEndsAt)
+- [x] Define `Generation` schema (merchantId, productId, inputImageUrl, resultImageUrl, costUSD, status)
+- [x] Sync schema to NeonDB using `drizzle-kit push`
 - [x] Verify tables in NeonDB dashboard
 
 ## Phase 3: Webhook Handlers
@@ -49,12 +49,6 @@
 - [ ] 7-day free trial implementation
 - [ ] Billing approval redirect flow
 - [ ] Billing status check on each generation request
-
-## Phase 7: Merchant Admin Panel
-- [ ] Dashboard (`app._index.tsx`): status, plan, usage, install guide
-- [ ] Settings (`app.settings.tsx`): global enable/disable toggle
-- [ ] Embed in Shopify Admin via App Bridge
-- [ ] Quota display: "X of 50 generations used this month"
 
 ## Phase 8: Try-On Flow Polish
 - [ ] Quota display on storefront: "You have X free generations remaining"

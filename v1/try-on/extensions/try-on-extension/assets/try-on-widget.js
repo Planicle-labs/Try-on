@@ -340,19 +340,28 @@ document.addEventListener('DOMContentLoaded', () => {
       uploadView.classList.add('hidden');
       loadingView.classList.remove('hidden');
   
-      // Phase 4: Mock the API Request.
-      // In Phase 5, we will hit /apps/try-on/generate
+      const formData = new FormData();
+      formData.append('userImage', state.userImageFile);
+      formData.append('productImage', productImage);
+      formData.append('productId', container.dataset.productId);
+  
       try {
-        await new Promise(resolve => setTimeout(resolve, 3500)); // Mock network latency
-        
-        // Mock successful result
-        // TODO: Replace with real API fetch later
-        const mockResultUrl = productImage; // Mocking with product image for now
-        showResult(mockResultUrl);
+        const response = await fetch('/apps/try-on/generate', {
+          method: 'POST',
+          body: formData
+        });
+  
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Generation failed');
+        }
+  
+        const data = await response.json();
+        showResult(data.resultUrl);
       } catch (err) {
         loadingView.classList.add('hidden');
         uploadView.classList.remove('hidden');
-        showError('Generation failed. Please try again.');
+        showError(err.message || 'Generation failed. Please try again.');
         console.error("VTON Proxy Error:", err);
       }
     };
