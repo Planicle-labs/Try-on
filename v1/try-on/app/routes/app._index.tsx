@@ -1098,7 +1098,7 @@ export default function Index() {
                 <BlockStack gap="400">
                   <InlineStack align="space-between" blockAlign="center">
                     <Text variant="headingMd" as="h3">
-                      Live Preview
+                      Preview
                     </Text>
                     <Badge
                       tone={isWidgetEnabled ? "success" : "attention"}
